@@ -1,0 +1,30 @@
+services:
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: payguard-dynamodb-local
+    restart: unless-stopped
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f -s -X POST -H 'Authorization: AWS4-HMAC-SHA256 Credential=dummy/20260918/us-west-2/dynamodb/aws4_request, SignedHeaders=host;x-amz-date;x-amz-target, Signature=dummy' -H 'x-amz-target: DynamoDB_20120810.ListTables' -H 'Content-Type: application/x-amz-json-1.0' -d '{}' http://127.0.0.1:8000/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  localstack:
+    image: localstack/localstack:3.8
+    container_name: payguard-localstack
+    restart: unless-stopped
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - AWS_DEFAULT_REGION=us-west-2
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f -s http://127.0.0.1:4566/_localstack/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

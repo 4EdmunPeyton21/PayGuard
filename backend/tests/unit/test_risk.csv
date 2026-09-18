@@ -1,0 +1,11 @@
+test_name,signals,strengths,directions,expected_level
+fake_kyc_full,"impersonation_claim,urgency_language,credential_request,external_link_present,domain_mismatch","MEDIUM,MEDIUM,HIGH,MEDIUM,HIGH","risk,risk,risk,risk,risk",HIGH_RISK
+lone_urgency,"urgency_language","MEDIUM","risk",LOW_CONCERN
+verified_plus_urgency,"domain_verified_official,urgency_language","MEDIUM,MEDIUM","benign,risk",LOW_CONCERN
+otp_with_link,"otp_request,external_link_present","HIGH,MEDIUM","risk,risk",HIGH_RISK
+impersonation_domain_mismatch,"impersonation_claim,domain_mismatch","MEDIUM,HIGH","risk,risk",HIGH_RISK
+all_benign,"no_actionable_request,sender_verified_channel","MEDIUM,MEDIUM","benign,benign",LOW_CONCERN
+empty,"","","",LOW_CONCERN
+credential_only,"credential_request","HIGH","risk",CAUTION
+informational_with_no_link,"no_actionable_request","MEDIUM","benign",LOW_CONCERN
+verified_sender_caution_cap,"domain_verified_official,urgency_language,threat_of_consequence","MEDIUM,MEDIUM,MEDIUM","benign,risk,risk",LOW_CONCERN

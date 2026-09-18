@@ -1,0 +1,68 @@
+# PayGuard Risk Policy v1
+# All weights, thresholds, gates, and FP guards are declared here.
+# Python code reads this YAML; nothing is hardcoded in engine.py.
+
+policy_version: risk_policy_v1
+
+# Signal weights: positive = risk, negative = benign/mitigating
+weights:
+  credential_request:      30
+  remote_access_request:   40
+  domain_mismatch:         35
+  lookalike_domain:        30
+  ip_address_host:         25
+  punycode_host:           30
+  upi_amount_mismatch:     30
+  upi_payee_mismatch:      20
+  impersonation_claim:     15
+  urgency_language:        10
+  threat_of_consequence:   12
+  link_shortener:          10
+  pattern_match:           20
+  otp_request:             30
+  pin_request:             30
+  payment_request:         20
+  external_link_present:   10
+  unsolicited_refund:      25
+  investment_promise:      25
+  job_offer_fee:           25
+  upi_collect_request:     15
+  excessive_subdomains:    10
+  brand_token_outside_domain: 20
+  ocr_low_confidence:       5
+
+  # benign / negative-weight signals
+  domain_verified_official: -35
+  no_actionable_request:   -25
+  sender_verified_channel: -20
+
+# Score thresholds for risk levels
+thresholds:
+  caution:   25
+  high_risk: 55
+
+# Gates: force HIGH_RISK regardless of score when these signal combos fire
+gates:
+  - name: credential_exfil_via_link
+    all_of: [external_link_present]
+    any_of: [otp_request, pin_request, credential_request]
+
+  - name: impersonation_with_domain_mismatch
+    all_of: [impersonation_claim, domain_mismatch]
+
+# FP guards: cap the level to protect legitimate messages
+fp_guards:
+  - name: informational_only
+    all_of: [no_actionable_request]
+    none_of: [external_link_present, payment_request, credential_request]
+    cap: LOW_CONCERN
+
+  - name: verified_official_sender
+    all_of: [domain_verified_official]
+    none_of: [otp_request, credential_request, upi_amount_mismatch]
+    cap: CAUTION
+
+# Evidence floor: can't call HIGH_RISK on thin air
+evidence_floor:
+  high_risk_requires_min_evidence: 2
+  high_risk_requires_min_strength: HIGH

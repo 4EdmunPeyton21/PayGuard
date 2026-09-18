@@ -1,0 +1,32 @@
+urgency_language:
+  confidence: 0.9
+  patterns:
+    - '\b(immediately|urgent|urgently|right now|at once|act now|instant|instantly)\b'
+    - '\b(today|within 24 hours|within 24hrs)\b'
+    - 'तुरंत'
+    - '\bjaldi\b'
+
+threat_of_consequence:
+  confidence: 0.85
+  patterns:
+    - '\b(will be blocked|account blocked|account will be suspended|card blocked)\b'
+    - '\b(services? terminated|deactivated|penalty|legal action)\b'
+    - '\bblock ho jayega\b'
+    - '\bband ho jayega\b'
+
+credential_request:
+  confidence: 0.95
+  patterns:
+    - '\b(complete kyc|update kyc|verify kyc|mandate kyc|kyc verification)\b'
+    - '\b(share otp|send otp|enter otp|submit otp)\b'
+    - '\b(share pin|enter pin|share password|enter password)\b'
+    - '\bkyc update karein\b'
+    - '\bpan card update\b'
+    - '\baadhaar update\b'
+
+informational_transaction:
+  confidence: 0.95
+  patterns:
+    - '\b(debited by rs\.?\s*[\d,]+(\.\d+)?|credited with rs\.?\s*[\d,]+(\.\d+)?|debited by|credited to|credited with|debited with)\b'
+    - '\b(available balance|avbl bal|bal:)\b'
+    - '\b(spent on|transferred to|received from)\b'

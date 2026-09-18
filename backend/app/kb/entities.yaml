@@ -1,0 +1,222 @@
+- id: hdfc_bank
+  name: HDFC Bank
+  aliases:
+    - HDFC
+    - HDFC Bank Ltd
+    - hdfc bank
+    - hdfcbank
+    - एचडीएफसी
+    - एचडीएफसी बैंक
+  official_domains:
+    - hdfcbank.com
+    - hdfcsec.com
+  official_sms_senders:
+    - HDFCBK
+    - HDFCBN
+  sector: bank
+  never_asks_for:
+    - otp
+    - pin
+    - cvv
+    - password
+    - card_number
+  source: "Official website footer, verified 2026-09-18"
+  version: 3
+
+- id: sbi
+  name: State Bank of India
+  aliases:
+    - SBI
+    - State Bank
+    - State Bank of India
+    - onlinesbi
+    - एसबीआई
+    - भारतीय स्टेट बैंक
+  official_domains:
+    - sbi.co.in
+    - onlinesbi.sbi
+    - onlinesbi.com
+  official_sms_senders:
+    - SBINB
+    - SBIPSG
+    - SBIUPI
+  sector: bank
+  never_asks_for:
+    - otp
+    - pin
+    - cvv
+    - password
+    - card_number
+  source: "Official website footer, verified 2026-09-18"
+  version: 1
+
+- id: icici_bank
+  name: ICICI Bank
+  aliases:
+    - ICICI
+    - ICICI Bank Ltd
+    - icici bank
+    - आईसीआईसीआई
+  official_domains:
+    - icicibank.com
+  official_sms_senders:
+    - ICICIB
+    - ICICIT
+  sector: bank
+  never_asks_for:
+    - otp
+    - pin
+    - cvv
+    - password
+    - card_number
+  source: "Official website footer, verified 2026-09-18"
+  version: 1
+
+- id: axis_bank
+  name: Axis Bank
+  aliases:
+    - Axis
+    - Axis Bank Ltd
+    - axis bank
+    - एक्सिस बैंक
+  official_domains:
+    - axisbank.com
+  official_sms_senders:
+    - AXISBK
+    - AXISBN
+  sector: bank
+  never_asks_for:
+    - otp
+    - pin
+    - cvv
+    - password
+    - card_number
+  source: "Official website footer, verified 2026-09-18"
+  version: 1
+
+- id: phonepe
+  name: PhonePe
+  aliases:
+    - PhonePe
+    - Phone Pe
+    - phonepe
+    - फोनपे
+  official_domains:
+    - phonepe.com
+  official_sms_senders:
+    - PHONEPE
+    - PHNPE
+  sector: payment_app
+  never_asks_for:
+    - otp
+    - pin
+    - password
+  source: "Official website security guidelines, verified 2026-09-18"
+  version: 1
+
+- id: paytm
+  name: Paytm
+  aliases:
+    - Paytm
+    - Pay TM
+    - One97 Communications
+    - paytm
+    - पेटीएम
+  official_domains:
+    - paytm.com
+  official_sms_senders:
+    - PAYTM
+    - PYTM
+  sector: payment_app
+  never_asks_for:
+    - otp
+    - pin
+    - password
+  source: "Official website security guidelines, verified 2026-09-18"
+  version: 1
+
+- id: google_pay
+  name: Google Pay
+  aliases:
+    - Google Pay
+    - GPay
+    - G Pay
+    - google pay
+    - गूगल पे
+  official_domains:
+    - pay.google.com
+    - google.com
+  official_sms_senders:
+    - GPAY
+    - GOOGLE
+  sector: payment_app
+  never_asks_for:
+    - otp
+    - pin
+    - password
+  source: "Official website security guidelines, verified 2026-09-18"
+  version: 1
+
+- id: amazon_in
+  name: Amazon India
+  aliases:
+    - Amazon
+    - Amazon Pay
+    - Amazon India
+    - amazon
+    - अमेज़न
+  official_domains:
+    - amazon.in
+    - amazon.com
+  official_sms_senders:
+    - AMAZON
+    - AMZPIN
+  sector: ecommerce
+  never_asks_for:
+    - otp
+    - pin
+    - password
+  source: "Official website security guidelines, verified 2026-09-18"
+  version: 1
+
+- id: flipkart
+  name: Flipkart
+  aliases:
+    - Flipkart
+    - flipkart
+    - फ्लिपकार्ट
+  official_domains:
+    - flipkart.com
+  official_sms_senders:
+    - FLPKRT
+    - FKRT
+  sector: ecommerce
+  never_asks_for:
+    - otp
+    - pin
+    - password
+  source: "Official website security guidelines, verified 2026-09-18"
+  version: 1
+
+- id: india_post
+  name: India Post
+  aliases:
+    - India Post
+    - Post Office
+    - Department of Posts
+    - indiapost
+    - भारतीय डाक
+    - डाक विभाग
+  official_domains:
+    - indiapost.gov.in
+  official_sms_senders:
+    - INPOST
+    - DOPIND
+  sector: delivery
+  never_asks_for:
+    - otp
+    - pin
+    - password
+    - card_number
+  source: "Official website security advisory, verified 2026-09-18"
+  version: 1

@@ -1,0 +1,41 @@
+# PayGuard - Recommended Actions Knowledge Base
+# Mapping of advice keys and signal defaults to safety instructions.
+
+actions:
+  no_click: "Do not open the link in the message."
+  no_otp: "Do not share an OTP, PIN, or password with anyone, including callers claiming to be from your bank."
+  verify_official_app: "If you want to check your account, open your bank's official app or type the address yourself."
+  verify_using_card_number: "Verify using the number printed on your bank card or passbook, not a number from this message."
+  hang_up_call: "Hang up immediately if anyone asks you to read out an OTP or PIN over the phone."
+  never_pay_to_receive: "Remember: in UPI you never need to enter your PIN or send money to receive a refund."
+  no_pin_for_receiving: "Entering your UPI PIN always deducts money from your account, it never deposits money."
+  verify_courier_app: "Check delivery status directly through the courier's official app or tracking portal."
+  no_unsolicited_delivery_payment: "Never pay re-delivery or address update charges through unverified links or phone numbers."
+  qr_only_for_paying: "QR codes in UPI are only for making payments, never for receiving money."
+  never_scan_qr_to_receive: "Do not scan any QR code sent to you with a promise of receiving money."
+  legitimate_jobs_never_charge: "Legitimate employers never ask candidates to pay registration fees or security deposits."
+  verify_company_email: "Verify job offers directly through official company websites and corporate email addresses."
+  routine_monitoring: "No immediate action required. Continue to monitor your account statements regularly."
+
+signal_defaults:
+  credential_request:
+    - no_click
+    - no_otp
+  otp_request:
+    - no_otp
+    - hang_up_call
+  domain_mismatch:
+    - no_click
+    - verify_official_app
+  lookalike_domain:
+    - no_click
+    - verify_official_app
+  external_link_present:
+    - no_click
+  payment_request:
+    - never_pay_to_receive
+  upi_collect_request:
+    - qr_only_for_paying
+    - never_pay_to_receive
+  no_actionable_request:
+    - routine_monitoring

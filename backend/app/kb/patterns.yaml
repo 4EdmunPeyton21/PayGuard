@@ -1,0 +1,102 @@
+# PayGuard - Scam Pattern Definitions
+# Deterministic set-matching rules. No embeddings, no vector DB.
+
+- id: fake_kyc
+  name: Fake KYC / account-suspension
+  requires_all:
+    - impersonation_claim
+  requires_any:
+    - credential_request
+    - external_link_present
+  supporting:
+    - urgency_language
+    - threat_of_consequence
+    - domain_mismatch
+  min_support: 2
+  advice_keys:
+    - no_click
+    - no_otp
+    - verify_official_app
+
+- id: otp_harvesting
+  name: OTP harvesting
+  requires_all:
+    - otp_request
+  requires_any:
+    - impersonation_claim
+    - urgency_language
+  supporting:
+    - threat_of_consequence
+    - remote_access_request
+    - domain_mismatch
+  min_support: 1
+  advice_keys:
+    - no_otp
+    - hang_up_call
+
+- id: fake_refund
+  name: Fake refund
+  requires_all:
+    - unsolicited_refund
+  requires_any:
+    - upi_collect_request
+    - payment_request
+    - external_link_present
+  supporting:
+    - impersonation_claim
+    - urgency_language
+    - upi_payee_mismatch
+  min_support: 1
+  advice_keys:
+    - never_pay_to_receive
+    - no_pin_for_receiving
+
+- id: fake_delivery_fee
+  name: Fake delivery fee
+  requires_all:
+    - payment_request
+  requires_any:
+    - impersonation_claim
+    - external_link_present
+  supporting:
+    - urgency_language
+    - upi_amount_mismatch
+    - domain_mismatch
+    - lookalike_domain
+  min_support: 1
+  advice_keys:
+    - verify_courier_app
+    - no_unsolicited_delivery_payment
+
+- id: qr_manipulation
+  name: QR manipulation
+  requires_all:
+    - upi_collect_request
+  requires_any:
+    - unsolicited_refund
+    - payment_request
+  supporting:
+    - upi_amount_mismatch
+    - upi_payee_mismatch
+    - impersonation_claim
+  min_support: 1
+  advice_keys:
+    - qr_only_for_paying
+    - never_scan_qr_to_receive
+
+- id: job_fee
+  name: Job-fee / task scam
+  requires_all:
+    - job_offer_fee
+  requires_any:
+    - payment_request
+    - credential_request
+    - external_link_present
+  supporting:
+    - investment_promise
+    - urgency_language
+    - link_shortener
+  min_support: 1
+  advice_keys:
+    - legitimate_jobs_never_charge
+    - verify_company_email
