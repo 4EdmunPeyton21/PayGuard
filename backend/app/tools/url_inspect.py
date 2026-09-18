@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 from urllib.parse import urlparse
 
 import Levenshtein
@@ -15,7 +16,8 @@ SHORTENERS = {
 # Empty suffix_list_urls prevents any network calls. Deterministic offline behavior using snapshot.
 extract = tldextract.TLDExtract(suffix_list_urls=(), fallback_to_snapshot=True)
 
-def url_inspect(url: str) -> UrlInspectResult:
+
+def url_inspect(url: str, claimed_entity: Optional[str] = None) -> UrlInspectResult:
     original_url = url
     if not url.startswith(("http://", "https://")):
         url = "http://" + url

@@ -1,8 +1,34 @@
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator, List, Literal, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
 from app.schemas.evidence import Signal
+
+
+class ToolRejection(BaseModel):
+    status: Literal["rejected"] = "rejected"
+    tool: str
+    reason: str
+    correction: str
+    rejected_arg: Optional[str] = None
+
+
+class SignalScanInput(BaseModel):
+    text: str
+
+
+class UrlInspectInput(BaseModel):
+    url: str
+    claimed_entity: Optional[str] = None
+
+
+class EntityDomainCheckInput(BaseModel):
+    claimed_entity: str
+    domains: List[str]
+
+
+class PatternMatchInput(BaseModel):
+    signals: List[str]
 
 
 class SignalItem(BaseModel):
