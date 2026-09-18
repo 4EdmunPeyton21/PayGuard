@@ -166,3 +166,6 @@ def evaluate(ledger: EvidenceLedger, policy_path: Optional[str] = None) -> RiskR
         rules_fired=rules_fired,
         policy_version=policy_version,
     )
+
+
+evaluate_ledger = evaluate
