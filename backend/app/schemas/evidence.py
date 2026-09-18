@@ -91,3 +91,7 @@ class EvidenceLedger(BaseModel):
 
     def __getitem__(self, index: int) -> Evidence:
         return self.items[index]
+
+    @property
+    def signals(self) -> set[Signal]:
+        return {item.signal for item in self.items}

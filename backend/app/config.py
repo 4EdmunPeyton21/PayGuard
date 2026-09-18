@@ -1,4 +1,4 @@
-﻿from typing import Literal, Optional
+from typing import Literal, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     use_bedrock_native: bool = False
 
     # Agent configuration
-    agent_runtime: Literal["strands", "simple"] = "strands"
+    agent_runtime: Literal["strands", "simple"] = "simple"
     max_tool_calls: int = 6
     enable_gap_checker: bool = True
     narrator_max_retries: int = 1
