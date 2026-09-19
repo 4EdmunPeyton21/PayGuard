@@ -36,10 +36,13 @@ TOOL SELECTION HEURISTICS
 - URL present, not yet inspected          -> url_inspect
 - Entity is claimed + domain was supplied -> entity_domain_check
 - Two or more signals collected           -> pattern_match
+- Image present and may hold a QR         -> qr_decode
+- qr_decode returned a UPI payload        -> upi_analyze (pass payment_context)
+- qr_decode returned a URL payload        -> url_inspect on that URL
 
 WHEN TO STOP
-Stop when every extracted artefact (text, each URL) has been examined \
-at least once, and pattern_match has run. Then emit:
+Stop when every extracted artefact (text, each URL, each image) has been \
+examined at least once, and pattern_match has run. Then emit:
 {{"action": "conclude", "open_questions": [...]}}
 List anything you could not verify. Do not guess it.
 """

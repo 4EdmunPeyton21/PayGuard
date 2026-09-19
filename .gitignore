@@ -46,3 +46,11 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Local tooling (machine-local Claude Code / skills config, not project code)
+.claude/
+.agents/
+skills-lock.json
+
+# Generated knowledge-graph artifacts (regenerable via /graphify)
+graphify-out/

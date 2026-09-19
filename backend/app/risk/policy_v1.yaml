@@ -62,6 +62,31 @@ fp_guards:
     none_of: [otp_request, credential_request, upi_amount_mismatch]
     cap: CAUTION
 
+  # D25 dev-set finding: sharing an OTP with a courier at the doorstep is
+  # normal, legitimate delivery practice -- don't score it the same as an
+  # OTP request over a remote channel, as long as there's no link/payment
+  # ask riding along with it.
+  - name: delivery_otp_in_person
+    all_of: [sender_verified_channel]
+    none_of: [external_link_present, payment_request, domain_mismatch]
+    cap: LOW_CONCERN
+
+  # D25 dev-set finding: an identity claim plus alarming wording alone,
+  # with no request for credentials/money/a click, is a normal fraud-alert
+  # or compliance-reminder message -- not evidence of anything.
+  - name: alarm_without_actionable_request
+    all_of: [impersonation_claim]
+    none_of:
+      - credential_request
+      - otp_request
+      - pin_request
+      - payment_request
+      - external_link_present
+      - upi_collect_request
+      - remote_access_request
+      - domain_mismatch
+    cap: LOW_CONCERN
+
 # Evidence floor: can't call HIGH_RISK on thin air
 evidence_floor:
   high_risk_requires_min_evidence: 2

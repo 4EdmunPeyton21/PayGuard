@@ -96,12 +96,9 @@ def run_arm0(case: NormalisedCase) -> SafetyReport:
     if text:
         tool_calls += 1
         scan_res = signal_scan(text)
+        benign_signals = (Signal.NO_ACTIONABLE_REQUEST, Signal.SENDER_VERIFIED_CHANNEL)
         for sig_item in scan_res.signals:
-            direction = (
-                "benign"
-                if sig_item.signal == Signal.NO_ACTIONABLE_REQUEST
-                else "risk"
-            )
+            direction = "benign" if sig_item.signal in benign_signals else "risk"
             strength = "HIGH" if sig_item.confidence >= 0.8 else "MEDIUM"
             interp_map = {
                 Signal.URGENCY_LANGUAGE: (

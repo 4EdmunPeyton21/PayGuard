@@ -31,6 +31,24 @@ class PatternMatchInput(BaseModel):
     signals: List[str]
 
 
+class UpiFields(BaseModel):
+    payee_vpa: Optional[str] = None
+    payee_name: Optional[str] = None
+    amount: Optional[float] = None
+    currency: Optional[str] = None
+    transaction_note: Optional[str] = None
+    merchant_code: Optional[str] = None
+
+
+class QrDecodeInput(BaseModel):
+    image_ref: str
+
+
+class UpiAnalyzeInput(BaseModel):
+    upi_fields: UpiFields
+    payment_context: Optional[str] = None
+
+
 class SignalItem(BaseModel):
     signal: Signal
     quote: str
@@ -121,3 +139,25 @@ class PatternMatchResult(BaseModel):
     @property
     def patterns(self) -> List[PatternMatchItem]:
         return self.matched_patterns
+
+
+class QrDecodeResult(BaseModel):
+    decoded: bool
+    payload_type: Literal["upi", "url", "text", "none"] = "none"
+    raw_payload: Optional[str] = None
+    upi_fields: Optional[UpiFields] = None
+    url: Optional[str] = None
+
+
+class UpiAnalysisResult(BaseModel):
+    payee_vpa: Optional[str] = None
+    payee_name: Optional[str] = None
+    amount: Optional[float] = None
+    currency: Optional[str] = None
+    stated_purpose: Optional[str] = None
+    expected_amount: Optional[float] = None
+    amount_mismatch: bool = False
+    amount_ratio: Optional[float] = None
+    payee_handle: Optional[str] = None
+    payee_is_merchant_vpa: bool = False
+    signals: List[Signal] = Field(default_factory=list)

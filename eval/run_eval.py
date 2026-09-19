@@ -61,6 +61,8 @@ def main():
         from eval.arms.arm0_deterministic import run_arm0 as run_arm
     elif args.arm == "arm1":
         from eval.arms.arm1_baseline_llm import run_arm1 as run_arm
+    elif args.arm == "arm2":
+        from eval.arms.arm2_agent_tools import run_arm2 as run_arm
     else:
         print(f"Arm '{args.arm}' is not yet implemented.")
         return
@@ -86,10 +88,12 @@ def main():
             report = run_arm(case)
             predicted_level = report.risk_level
             predicted_signals = [e.signal.value for e in report.evidence]
+            tool_calls = report.tool_calls
         except Exception as e:
             print(f"\n[!] Error processing case {cdata['case_id']}: {e}")
             predicted_level = "ERROR"
             predicted_signals = []
+            tool_calls = 0
 
         res_row = {
             "case_id": cdata["case_id"],
@@ -99,6 +103,7 @@ def main():
             "expected_signals": cdata["expected_signals"],
             "predicted_level": predicted_level,
             "predicted_signals": predicted_signals,
+            "tool_calls": tool_calls,
         }
         results.append(res_row)
 

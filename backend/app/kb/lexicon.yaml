@@ -24,6 +24,74 @@ credential_request:
     - '\bpan card update\b'
     - '\baadhaar update\b'
 
+# D25 dev-set finding: policy_v1.yaml and patterns.yaml already define
+# weights/requires_all for these signal names, but they were never wired
+# into signal_scan -- otp_harvesting/fake_refund/qr_manipulation/job_fee
+# patterns could never fire. Added below from dev-split false negatives.
+otp_request:
+  confidence: 0.9
+  patterns:
+    - '\b(share|send|enter|submit|reply with)\s+(the\s+|your\s+)?otp\b'
+    - '\botp\b.{0,25}\b(required|needed|to unblock|to unlock|to confirm|within \d+ minutes)\b'
+
+pin_request:
+  confidence: 0.9
+  patterns:
+    - '\b(share|send|enter|submit|reply with)\s+(the\s+|your\s+)?(upi\s+)?pin\b'
+
+payment_request:
+  confidence: 0.85
+  patterns:
+    # Tight adjacency: "pay Rs 500" -- not "Google Pay: Payment of Rs 500"
+    # (deliberately not \bpay\b.{0,N}... -- that also matched the brand
+    # name "...Pay:" followed by an unrelated amount later in the sentence)
+    - '\bpay\s+(rs\.?|inr|₹)\s*[\d,]+'
+    - '\b(clearance|processing|registration|handling|delivery|customs?|re-?delivery|address verification|cod adjustment)\s+fee\b'
+    - '\benter\s+(your\s+)?upi\s+pin\s+to\s+(receive|pay)\b'
+
+unsolicited_refund:
+  confidence: 0.85
+  patterns:
+    - '\b(unclaimed|pending|unsolicited)\s+refund\b'
+    # refund+amount only counts as a *signal* alongside a suspicious framing
+    # word nearby -- a bare "refund of Rs X ... processed" is a normal,
+    # legitimate transaction notice and must not match on its own.
+    - '\brefund\s+(of\s+)?(rs\.?|inr|₹)?\s*[\d,]+.{0,50}\b(claim|receive|collect|pending|waiting|stuck|reversed|wrong account|verify (upi )?pin|enter (upi )?pin|confirm bank)\b'
+    - '\b(cashback|reward)\b.{0,25}\b(credited by mistake|by mistake)\b'
+
+job_offer_fee:
+  confidence: 0.85
+  patterns:
+    - '\b(registration|security|deposit|training|kit|joining|verification|material)\s+fee\b'
+    - '\b(work from home|part.?time job|data entry job)\b'
+    - '\bselected for (the )?(job|interview|offer)\b'
+    - '\bearn (rs\.?|inr|₹)?\s*[\d,]+\s*/\s*(day|week|month)\b'
+
+upi_collect_request:
+  confidence: 0.85
+  patterns:
+    - '\bscan\s+(this|the|attached)?\s*(qr|code)\b.{0,40}\b(receive|collect|claim)\b'
+
+remote_access_request:
+  confidence: 0.85
+  patterns:
+    - '\b(anydesk|teamviewer|quick support|screen ?share|screen ?sharing)\b'
+
+investment_promise:
+  confidence: 0.8
+  patterns:
+    - '\b(guaranteed returns?|double your money|risk.?free investment)\b'
+    - '\b\d+%\s*(daily|weekly|monthly)\s*returns?\b'
+
+# Dev-set finding: sharing an OTP with a courier/delivery agent in person
+# at the doorstep is standard, legitimate Indian delivery practice -- an
+# OTP request alone must not treat that the same as an OTP request over a
+# remote channel. Paired with the delivery_otp_in_person FP guard.
+sender_verified_channel:
+  confidence: 0.85
+  patterns:
+    - '\b(delivery partner|driver is arriving|at your doorstep|do not share (this|it)?\s*with anyone else)\b'
+
 informational_transaction:
   confidence: 0.95
   patterns:

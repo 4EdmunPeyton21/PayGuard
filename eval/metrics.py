@@ -24,11 +24,14 @@ def calculate_metrics(results_path: str) -> Dict[str, Any]:
 
     ev_precisions = []
     ev_recalls = []
+    tool_calls = []
 
     for row in lines:
         exp_lvl = row["expected_level"]
         pred_lvl = row.get("predicted_level", "ERROR")
         cm[exp_lvl][pred_lvl] += 1
+        if "tool_calls" in row:
+            tool_calls.append(row["tool_calls"])
 
         # Binary definition: Flagged (HIGH_RISK or CAUTION) vs Not Flagged (LOW_CONCERN)
         is_exp_flagged = exp_lvl in ("HIGH_RISK", "CAUTION")
@@ -61,6 +64,7 @@ def calculate_metrics(results_path: str) -> Dict[str, Any]:
 
     avg_ev_p = sum(ev_precisions) / len(ev_precisions) if ev_precisions else 0.0
     avg_ev_r = sum(ev_recalls) / len(ev_recalls) if ev_recalls else 0.0
+    avg_tool_calls = sum(tool_calls) / len(tool_calls) if tool_calls else 0.0
 
     print("\n" + "=" * 70)
     print(f"RUN METRICS (n={total})")
@@ -70,6 +74,7 @@ def calculate_metrics(results_path: str) -> Dict[str, Any]:
     print(f"False Negative Rate (FNR): {fnr:.2%}")
     print(f"Evidence Precision:        {avg_ev_p:.2%}")
     print(f"Evidence Recall:           {avg_ev_r:.2%}")
+    print(f"Mean Tool Calls:           {avg_tool_calls:.2f}")
 
     print("\nCONFUSION MATRIX (Rows: True, Cols: Predicted):")
     levels = ["HIGH_RISK", "CAUTION", "LOW_CONCERN", "ERROR"]
@@ -90,6 +95,7 @@ def calculate_metrics(results_path: str) -> Dict[str, Any]:
         "fnr": fnr,
         "evidence_precision": avg_ev_p,
         "evidence_recall": avg_ev_r,
+        "mean_tool_calls": avg_tool_calls,
         "confusion_matrix": {k: dict(v) for k, v in cm.items()},
     }
 
@@ -143,6 +149,7 @@ def print_comparative_table(results_dir: Path) -> None:
         ("False Negative Rate", lambda m: f"{m['fnr']:.2%}"),
         ("Evidence Precision", lambda m: f"{m['evidence_precision']:.2%}"),
         ("Evidence Recall", lambda m: f"{m['evidence_recall']:.2%}"),
+        ("Mean Tool Calls", lambda m: f"{m['mean_tool_calls']:.2f}"),
         ("Evaluated Cases", lambda m: f"{m['total']}"),
     ]
 
@@ -166,6 +173,7 @@ def _compute_metrics_silent(results_path: Path) -> Optional[Dict[str, Any]]:
     y_pred_bin = []
     ev_precisions = []
     ev_recalls = []
+    tool_calls = []
 
     for row in lines:
         exp_lvl = row["expected_level"]
@@ -174,6 +182,8 @@ def _compute_metrics_silent(results_path: Path) -> Optional[Dict[str, Any]]:
         is_pred = pred_lvl in ("HIGH_RISK", "CAUTION")
         y_true_bin.append(is_exp)
         y_pred_bin.append(is_pred)
+        if "tool_calls" in row:
+            tool_calls.append(row["tool_calls"])
 
         exp_sigs = set(row.get("expected_signals", []))
         pred_sigs = set(row.get("predicted_signals", []))
@@ -198,6 +208,7 @@ def _compute_metrics_silent(results_path: Path) -> Optional[Dict[str, Any]]:
         "fnr": fn / (fn + tp) if (fn + tp) > 0 else 0.0,
         "evidence_precision": sum(ev_precisions) / len(ev_precisions) if ev_precisions else 0.0,
         "evidence_recall": sum(ev_recalls) / len(ev_recalls) if ev_recalls else 0.0,
+        "mean_tool_calls": sum(tool_calls) / len(tool_calls) if tool_calls else 0.0,
     }
 
 

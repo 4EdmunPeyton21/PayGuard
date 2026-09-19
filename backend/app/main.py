@@ -1,7 +1,9 @@
 """PayGuard Core API.
 
 Routes:
-  POST /api/v1/analyze       — Sync analysis endpoint producing SafetyReport JSON
+  POST /api/v1/analyze          — Sync analysis endpoint producing SafetyReport JSON
+  POST /api/v1/analyze/stream   — SSE: ingest -> tool_start -> tool_result -> risk -> report
+  POST /api/v1/ocr               — Upload a screenshot, get back OCR'd text to confirm
   GET  /cases/{id}           — Retrieve persisted SafetyReport by case ID
   GET  /api/v1/cases/{id}    — Alias for /cases/{id}
   GET  /cases/{id}/trace     — Retrieve ordered tool execution trace from DynamoDB
@@ -10,15 +12,25 @@ Routes:
 """
 from __future__ import annotations
 
+import io
+import json
+import os
+import queue
+import tempfile
+import threading
 import time
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Iterator, Optional, Tuple
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from PIL import Image, UnidentifiedImageError
 
 from app.agent.investigator import _extract_urls, investigate
 from app.agent.narrator import get_recommended_actions, narrate
+from app.config import settings
+from app.ingest.ocr import OcrResult, extract_text
 from app.kb.loader import kb
 from app.risk.engine import evaluate_ledger
 from app.schemas.case import AnalyzeRequest, NormalisedCase
@@ -53,23 +65,44 @@ def healthz() -> Dict[str, str]:
     return {"status": "ok", "dynamodb": db_status}
 
 
-@app.post("/api/v1/analyze", response_model=SafetyReport)
-def analyze_case(request: AnalyzeRequest) -> SafetyReport:
-    """Synchronous case analysis endpoint.
+@app.post("/api/v1/ocr", response_model=OcrResult)
+async def ocr_upload(file: UploadFile = File(...)) -> OcrResult:  # noqa: B008 (FastAPI idiom)
+    """Extract text from an uploaded screenshot for the user to confirm (D23).
 
-    Ingests message text / context -> NormalisedCase -> Investigator agent loop
-    -> Risk Engine -> Narrator (with citation/lint validation) -> DynamoDB persistence.
+    The raw upload is never persisted: re-encoded through Pillow (drops EXIF,
+    flattens any multi-frame image) into a throwaway temp file for OCR, then
+    deleted. Low-confidence extractions are flagged so the UI can prompt the
+    user to review/edit before the text is investigated.
     """
-    if not request.text and not request.payment_context and not request.image_ref:
+    contents = await file.read()
+    if len(contents) > settings.max_upload_mb * 1024 * 1024:
         raise HTTPException(
-            status_code=400,
-            detail="At least one input (text, payment_context, or image_ref) must be provided.",
+            status_code=413,
+            detail=f"File exceeds the {settings.max_upload_mb}MB upload limit.",
         )
 
-    t0 = time.perf_counter()
-    case_id = f"c_{uuid.uuid4().hex[:8]}"
+    try:
+        image = Image.open(io.BytesIO(contents))
+        image.load()
+    except UnidentifiedImageError as exc:
+        raise HTTPException(
+            status_code=400, detail="Uploaded file is not a readable image."
+        ) from exc
 
-    # Ingest & normalise
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            image.convert("RGB").save(tmp, format="PNG")
+            tmp_path = tmp.name
+        return extract_text(tmp_path)
+    finally:
+        if tmp_path:
+            os.unlink(tmp_path)
+
+
+def _build_case(request: AnalyzeRequest) -> Tuple[str, NormalisedCase]:
+    """Ingest & normalise an AnalyzeRequest into a NormalisedCase."""
+    case_id = f"c_{uuid.uuid4().hex[:8]}"
     text = request.text or ""
     urls = _extract_urls(text)
     input_types = []
@@ -89,12 +122,37 @@ def analyze_case(request: AnalyzeRequest) -> SafetyReport:
         payment_context=request.payment_context,
         image_ref=request.image_ref,
     )
+    return case_id, case
 
-    # Execute investigation loop
-    inv_result = investigate(case, max_tool_calls=request.options.max_tool_calls)
 
-    # Evaluate risk score & level via deterministic risk engine
+def _run_pipeline(
+    case_id: str,
+    case: NormalisedCase,
+    max_tool_calls: int,
+    t0: float,
+    on_event: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+) -> SafetyReport:
+    """Investigator -> Risk Engine -> Narrator -> DynamoDB persistence.
+
+    Shared by the sync /analyze endpoint and the SSE /analyze/stream
+    endpoint; on_event (if given) is fired with ("tool_start"/"tool_result"
+    from the agent loop, and "risk" once the risk engine has scored the
+    ledger) so a caller can stream progress live instead of waiting for
+    the full report.
+    """
+    emit = on_event or (lambda *_a, **_kw: None)
+
+    inv_result = investigate(case, max_tool_calls=max_tool_calls, on_event=on_event)
+
     risk_res = evaluate_ledger(inv_result.ledger)
+    emit(
+        "risk",
+        {
+            "level": risk_res.level.value,
+            "score": float(risk_res.score),
+            "rules_fired": risk_res.rules_fired,
+        },
+    )
 
     # Extract claimed institution identity if detected
     claimed_entity: Optional[str] = None
@@ -136,6 +194,73 @@ def analyze_case(request: AnalyzeRequest) -> SafetyReport:
     save_case_investigation(case_id, case, report, inv_result.trace)
 
     return report
+
+
+@app.post("/api/v1/analyze", response_model=SafetyReport)
+def analyze_case(request: AnalyzeRequest) -> SafetyReport:
+    """Synchronous case analysis endpoint.
+
+    Ingests message text / context -> NormalisedCase -> Investigator agent loop
+    -> Risk Engine -> Narrator (with citation/lint validation) -> DynamoDB persistence.
+    """
+    if not request.text and not request.payment_context and not request.image_ref:
+        raise HTTPException(
+            status_code=400,
+            detail="At least one input (text, payment_context, or image_ref) must be provided.",
+        )
+
+    t0 = time.perf_counter()
+    case_id, case = _build_case(request)
+    return _run_pipeline(case_id, case, request.options.max_tool_calls, t0)
+
+
+def _sse(event: str, data: Dict[str, Any]) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, default=str)}\n\n"
+
+
+@app.post("/api/v1/analyze/stream")
+def analyze_case_stream(request: AnalyzeRequest) -> StreamingResponse:
+    """SSE analysis endpoint — same pipeline as /analyze, emitted live.
+
+    Event sequence: ingest -> tool_start -> tool_result (repeated per tool
+    call) -> risk -> report. The pipeline runs on a background thread; a
+    queue.Queue bridges its on_event callbacks to this generator so events
+    reach the client as the agent works, not all at once at the end.
+    """
+    if not request.text and not request.payment_context and not request.image_ref:
+        raise HTTPException(
+            status_code=400,
+            detail="At least one input (text, payment_context, or image_ref) must be provided.",
+        )
+
+    def gen() -> Iterator[str]:
+        t0 = time.perf_counter()
+        case_id, case = _build_case(request)
+        yield _sse("ingest", {"case_id": case_id, "input_types": case.input_types})
+
+        events: "queue.Queue[Optional[Tuple[str, Dict[str, Any]]]]" = queue.Queue()
+        box: Dict[str, SafetyReport] = {}
+
+        def worker() -> None:
+            box["report"] = _run_pipeline(
+                case_id,
+                case,
+                request.options.max_tool_calls,
+                t0,
+                on_event=lambda etype, payload: events.put((etype, payload)),
+            )
+            events.put(None)
+
+        threading.Thread(target=worker, daemon=True).start()
+        while True:
+            item = events.get()
+            if item is None:
+                break
+            yield _sse(*item)
+
+        yield _sse("report", box["report"].model_dump())
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
 
 
 @app.get("/cases/{case_id}", response_model=SafetyReport)

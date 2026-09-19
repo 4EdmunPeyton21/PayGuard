@@ -50,6 +50,15 @@ def signal_scan(text: str) -> SignalScanResult:
         ("urgency_language", Signal.URGENCY_LANGUAGE),
         ("threat_of_consequence", Signal.THREAT_OF_CONSEQUENCE),
         ("credential_request", Signal.CREDENTIAL_REQUEST),
+        ("otp_request", Signal.OTP_REQUEST),
+        ("pin_request", Signal.PIN_REQUEST),
+        ("payment_request", Signal.PAYMENT_REQUEST),
+        ("unsolicited_refund", Signal.UNSOLICITED_REFUND),
+        ("job_offer_fee", Signal.JOB_OFFER_FEE),
+        ("upi_collect_request", Signal.UPI_COLLECT_REQUEST),
+        ("remote_access_request", Signal.REMOTE_ACCESS_REQUEST),
+        ("investment_promise", Signal.INVESTMENT_PROMISE),
+        ("sender_verified_channel", Signal.SENDER_VERIFIED_CHANNEL),
     ]
 
     for key, signal_enum in risk_signal_keys:

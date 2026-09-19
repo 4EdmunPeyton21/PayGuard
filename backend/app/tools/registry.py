@@ -13,15 +13,21 @@ from app.schemas.tools import (
     EntityDomainCheckResult,
     PatternMatchInput,
     PatternMatchResult,
+    QrDecodeInput,
+    QrDecodeResult,
     SignalScanInput,
     SignalScanResult,
     ToolRejection,
+    UpiAnalysisResult,
+    UpiAnalyzeInput,
     UrlInspectInput,
     UrlInspectResult,
 )
 from app.tools.entity_domain_check import entity_domain_check
 from app.tools.pattern_match import pattern_match
+from app.tools.qr_decode import qr_decode
 from app.tools.signal_scan import signal_scan
+from app.tools.upi_analyze import upi_analyze
 from app.tools.url_inspect import url_inspect
 
 
@@ -179,6 +185,17 @@ class ToolRegistry:
                         rejected_arg="text",
                     )
 
+        # 4. qr_decode provenance check
+        if tool_name == "qr_decode" and case and case.image_ref:
+            target = str(args.get("image_ref", "")).strip()
+            if target != case.image_ref:
+                return ToolRejection(
+                    tool=tool_name,
+                    reason=f"image_ref '{target}' does not match the case's uploaded image.",
+                    correction=f"Call qr_decode with image_ref='{case.image_ref}'.",
+                    rejected_arg="image_ref",
+                )
+
         return None
 
     def dispatch(
@@ -305,6 +322,32 @@ default_registry.register(
         description=(
             "Match collected signals against known fraud pattern signatures "
             "defined in YAML KB."
+        ),
+    )
+)
+
+default_registry.register(
+    ToolDefinition(
+        name="qr_decode",
+        callable=qr_decode,
+        input_schema=QrDecodeInput,
+        output_schema=QrDecodeResult,
+        description=(
+            "Decode a QR code from an uploaded image and classify its payload "
+            "as a UPI payment link, a URL, or plain text."
+        ),
+    )
+)
+
+default_registry.register(
+    ToolDefinition(
+        name="upi_analyze",
+        callable=upi_analyze,
+        input_schema=UpiAnalyzeInput,
+        output_schema=UpiAnalysisResult,
+        description=(
+            "Analyze decoded UPI payment fields against the stated payment "
+            "context for amount and payee mismatches."
         ),
     )
 )

@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from openai import OpenAI
 
@@ -23,6 +23,7 @@ from app.agent.investigator import (
     _add_entity_domain_evidence,
     _add_pattern_match_evidence,
     _add_signal_scan_evidence,
+    _add_upi_analyze_evidence,
     _add_url_inspect_evidence,
     _extract_urls,
 )
@@ -121,6 +122,50 @@ TOOL_DEFS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "qr_decode",
+            "description": (
+                "Decode a QR code from an uploaded image and classify its "
+                "payload as a UPI payment link, a URL, or plain text."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "image_ref": {
+                        "type": "string",
+                        "description": "Path to the case's uploaded image.",
+                    }
+                },
+                "required": ["image_ref"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "upi_analyze",
+            "description": (
+                "Analyze UPI fields decoded from a QR against the stated "
+                "payment context for amount and payee mismatches."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "upi_fields": {
+                        "type": "object",
+                        "description": "The upi_fields object returned by qr_decode.",
+                    },
+                    "payment_context": {
+                        "type": "string",
+                        "description": "What the sender was told this payment is for.",
+                    },
+                },
+                "required": ["upi_fields"],
+            },
+        },
+    },
 ]
 
 
@@ -138,6 +183,9 @@ _EVIDENCE_ADDERS = {
     "pattern_match": lambda ledger, result, args: _add_pattern_match_evidence(
         ledger, result
     ),
+    "upi_analyze": lambda ledger, result, args: _add_upi_analyze_evidence(
+        ledger, result
+    ),
 }
 
 
@@ -145,10 +193,17 @@ def investigate_fallback(
     case: NormalisedCase,
     max_tool_calls: int = 6,
     registry: Optional[ToolRegistry] = None,
+    on_event: Optional[Callable[[str, Dict[str, Any]], None]] = None,
 ) -> InvestigationResult:
-    """Hand-rolled tool loop against the OpenAI-compatible API."""
+    """Hand-rolled tool loop against the OpenAI-compatible API.
+
+    on_event, if given, is called synchronously as ("tool_start" | "tool_result",
+    payload) at each tool dispatch — the hook the SSE endpoint (D19) uses to
+    stream progress live instead of replaying the trace after the fact.
+    """
     if registry is None:
         registry = default_registry
+    emit = on_event or (lambda *_a, **_kw: None)
 
     client = OpenAI(
         base_url=settings.llm_base_url,
@@ -255,6 +310,7 @@ def investigate_fallback(
 
             call_count += 1
             t0 = time.perf_counter()
+            emit("tool_start", {"tool": tool_name, "args": args})
 
             # Dispatch through registry (cache + provenance)
             result = registry.dispatch(
@@ -272,6 +328,11 @@ def investigate_fallback(
                     result_summary=result.reason[:100],
                 ))
                 tool_result_str = json.dumps(result.model_dump())
+                emit("tool_result", {
+                    "tool": tool_name, "result_type": "rejected",
+                    "elapsed_ms": elapsed_ms, "summary": result.reason[:100],
+                    "raw": result.model_dump(),
+                })
             else:
                 # Add evidence to ledger
                 adder = _EVIDENCE_ADDERS.get(tool_name)
@@ -290,12 +351,26 @@ def investigate_fallback(
                 elif tool_name == "pattern_match":
                     n = len(result.matched_patterns)
                     summary = f"{n} patterns"
+                elif tool_name == "qr_decode":
+                    summary = f"decoded={result.decoded} type={result.payload_type}"
+                    if result.payload_type == "url" and result.url:
+                        # Chaining (T4): a URL found inside a QR becomes a
+                        # legitimate url_inspect target even though it never
+                        # appeared in the case text.
+                        provenance_urls.add(result.url)
+                elif tool_name == "upi_analyze":
+                    summary = f"{len(result.signals)} signals"
 
                 trace.append(TraceStep(
                     tool=tool_name, args=args,
                     result_type="ok", elapsed_ms=elapsed_ms,
                     result_summary=summary,
                 ))
+                emit("tool_result", {
+                    "tool": tool_name, "result_type": "ok",
+                    "elapsed_ms": elapsed_ms, "summary": summary,
+                    "raw": result_dict,
+                })
 
             # Feed result back to conversation
             messages.append({
@@ -314,18 +389,24 @@ def investigate_fallback(
 
         gap = check_gaps(case, ledger)
         if gap != "PASS" and isinstance(gap, ForcedToolCall):
+            emit("tool_start", {"tool": gap.tool, "args": gap.args})
             t0 = time.perf_counter()
             execute_forced_call(gap, case, ledger, registry=registry)
             elapsed_ms = int((time.perf_counter() - t0) * 1000)
+            summary = f"Forced by gap checker: {gap.reason}"
             trace.append(
                 TraceStep(
                     tool=gap.tool,
                     args=gap.args,
                     result_type="ok",
                     elapsed_ms=elapsed_ms,
-                    result_summary=f"Forced by gap checker: {gap.reason}",
+                    result_summary=summary,
                 )
             )
+            emit("tool_result", {
+                "tool": gap.tool, "result_type": "ok",
+                "elapsed_ms": elapsed_ms, "summary": summary,
+            })
             call_count += 1
 
     # Extract open_questions from final assistant message

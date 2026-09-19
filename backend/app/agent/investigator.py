@@ -19,7 +19,7 @@ import json
 import re
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -64,12 +64,9 @@ def _add_signal_scan_evidence(
     ledger: EvidenceLedger,
     result: BaseModel,
 ) -> None:
+    _BENIGN_SIGNALS = (Signal.NO_ACTIONABLE_REQUEST, Signal.SENDER_VERIFIED_CHANNEL)
     for sig_item in result.signals:
-        direction = (
-            "benign"
-            if sig_item.signal == Signal.NO_ACTIONABLE_REQUEST
-            else "risk"
-        )
+        direction = "benign" if sig_item.signal in _BENIGN_SIGNALS else "risk"
         strength = "HIGH" if sig_item.confidence >= 0.8 else "MEDIUM"
         ledger.add(
             Evidence(
@@ -158,6 +155,49 @@ def _add_entity_domain_evidence(
         )
 
 
+def _add_upi_analyze_evidence(
+    ledger: EvidenceLedger,
+    result: BaseModel,
+) -> None:
+    for sig in result.signals:
+        # MEDIUM only: this evidence has neither a text quote nor a kb_ref to
+        # ground a HIGH strength claim (Evidence.validate_strength_grounding).
+        strength = "MEDIUM"
+        if sig == Signal.UPI_AMOUNT_MISMATCH:
+            observed = (
+                f"UPI request for {result.currency or ''} {result.amount} vs "
+                f"stated {result.currency or ''} {result.expected_amount}"
+            )
+            interpretation = (
+                f"Amount ratio {result.amount_ratio:.2f}x — actual request does not "
+                "match what the sender was told to expect."
+            )
+        elif sig == Signal.UPI_PAYEE_MISMATCH:
+            observed = (
+                f"UPI payee '{result.payee_name}' ({result.payee_vpa}) is not a "
+                "merchant-registered VPA"
+            )
+            interpretation = "A business collecting via a personal VPA is a known scam pattern"
+        else:  # UPI_COLLECT_REQUEST
+            observed = f"Message implies receiving money via '{result.stated_purpose}'"
+            interpretation = (
+                "Scanning a UPI QR always creates a pay/collect intent from the "
+                "scanner — there is no such thing as a 'receive money' QR."
+            )
+        ledger.add(
+            Evidence(
+                id=f"E{len(ledger) + 1}",
+                tool="upi_analyze",
+                signal=sig,
+                observed=observed,
+                interpretation=interpretation,
+                direction="risk",
+                strength=strength,
+                confidence=0.95,
+            )
+        )
+
+
 def _add_pattern_match_evidence(
     ledger: EvidenceLedger,
     result: BaseModel,
@@ -199,11 +239,13 @@ def investigate(
     case: NormalisedCase,
     max_tool_calls: int = 6,
     registry: Optional[ToolRegistry] = None,
+    on_event: Optional[Callable[[str, Dict[str, Any]], None]] = None,
 ) -> InvestigationResult:
     """Run the LLM investigator over a case.
 
     Dispatches to Strands or the fallback hand-rolled loop based on
-    the AGENT_RUNTIME setting.
+    the AGENT_RUNTIME setting. on_event streams tool_start/tool_result
+    progress as it happens (D19); only the fallback loop supports it today.
     """
     runtime = settings.agent_runtime
 
@@ -217,7 +259,7 @@ def investigate(
     # Default: hand-rolled loop (reliable on NIM)
     from app.agent.fallback_loop import investigate_fallback
 
-    return investigate_fallback(case, max_tool_calls, registry)
+    return investigate_fallback(case, max_tool_calls, registry, on_event=on_event)
 
 
 def _investigate_strands(
