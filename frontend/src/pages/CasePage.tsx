@@ -103,10 +103,10 @@ export default function CasePage({ caseId }: { caseId: string }) {
         <div aria-hidden className={`pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full ${level.glow} blur-2xl`} />
         <div className="flex items-center gap-3">
           <level.Icon className={`h-7 w-7 ${level.text}`} />
-          <span className={`font-display text-lg tracking-wide ${level.text}`}>{level.label}</span>
+          <span className={`font-display text-lg font-semibold tracking-wide ${level.text}`}>{level.label}</span>
           <span className="ml-auto font-mono text-xs text-ink-faint">{report.case_id}</span>
         </div>
-        <h1 className="mt-4 max-w-[48ch] font-display text-2xl leading-snug text-balance text-ink">
+        <h1 className="mt-4 max-w-[48ch] font-display text-2xl font-semibold leading-snug text-balance text-ink">
           {report.headline}
         </h1>
       </div>

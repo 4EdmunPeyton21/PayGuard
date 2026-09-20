@@ -43,11 +43,11 @@ export default function InputPage() {
           className="flex w-fit items-center gap-2 text-ink-muted transition hover:text-ink"
         >
           <IconShieldCheck className="h-5 w-5 text-accent" />
-          <span className="font-display text-sm tracking-[0.2em] uppercase">PayGuard</span>
+          <span className="font-display text-sm font-semibold tracking-[0.2em] uppercase">PayGuard</span>
         </button>
 
         <div className="max-w-md">
-          <h1 className="font-display text-3xl leading-[1.15] text-balance text-ink sm:text-4xl">
+          <h1 className="font-display text-3xl font-bold leading-[1.15] text-balance text-ink sm:text-4xl">
             Don&rsquo;t trust it. Investigate it.
           </h1>
           <p className="mt-3 max-w-[36ch] text-ink-muted">

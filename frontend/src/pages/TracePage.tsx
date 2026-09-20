@@ -151,7 +151,7 @@ export default function TracePage() {
       </button>
 
       <header>
-        <h1 className="font-display text-xl text-ink">
+        <h1 className="font-display text-xl font-semibold text-ink">
           Investigating
           {caseId && <span className="ml-2 font-mono text-base text-accent">{caseId}</span>}
         </h1>

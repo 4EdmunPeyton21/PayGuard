@@ -25,7 +25,7 @@ export default function LandingPage() {
         <nav className="relative mb-16 flex items-center justify-between sm:mb-24">
           <div className="flex items-center gap-2 text-ink-muted">
             <IconShieldCheck className="h-5 w-5 text-accent" />
-            <span className="font-display text-sm tracking-[0.2em] uppercase text-ink">PayGuard</span>
+            <span className="font-display text-sm font-semibold tracking-[0.2em] uppercase text-ink">PayGuard</span>
           </div>
           <button
             type="button"
@@ -38,7 +38,7 @@ export default function LandingPage() {
 
         <div className="relative grid gap-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div>
-            <h1 className="font-display text-5xl leading-[1.08] text-balance text-ink sm:text-6xl lg:text-6xl xl:text-7xl">
+            <h1 className="font-display text-5xl font-bold leading-[1.08] text-balance text-ink sm:text-6xl lg:text-6xl xl:text-7xl">
               Don&rsquo;t trust it. <span className="text-accent">Investigate it.</span>
             </h1>
             <p className="mt-6 max-w-[42ch] text-lg text-ink-muted">
@@ -108,7 +108,7 @@ export default function LandingPage() {
 
       {/* How it works */}
       <section id="how-it-works" className="border-b border-line px-6 py-20 sm:px-10 lg:px-16">
-        <h2 className="font-display text-2xl text-ink sm:text-3xl">How it works</h2>
+        <h2 className="font-display text-2xl font-semibold text-ink sm:text-3xl">How it works</h2>
         <ol className="mt-10 grid gap-10 sm:grid-cols-3">
           {STEPS.map((step) => (
             <li key={step.n} className="flex flex-col gap-2">
@@ -122,7 +122,7 @@ export default function LandingPage() {
 
       {/* Closing CTA */}
       <section className="px-6 py-20 text-center sm:px-10 lg:px-16">
-        <h2 className="font-display text-3xl text-balance text-ink sm:text-4xl">
+        <h2 className="font-display text-3xl font-semibold text-balance text-ink sm:text-4xl">
           Got a message you&rsquo;re not sure about?
         </h2>
         <button
