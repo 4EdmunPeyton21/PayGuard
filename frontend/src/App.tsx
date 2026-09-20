@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import CasePage from './pages/CasePage'
 import InputPage from './pages/InputPage'
+import LandingPage from './pages/LandingPage'
 import TracePage from './pages/TracePage'
 
 function App() {
@@ -18,7 +19,8 @@ function App() {
     ) : (
       (() => {
         const caseMatch = path.match(/^\/case\/([^/]+)\/?$/)
-        return caseMatch ? <CasePage caseId={caseMatch[1]} /> : <InputPage />
+        if (caseMatch) return <CasePage caseId={caseMatch[1]} />
+        return path === '/check' ? <InputPage /> : <LandingPage />
       })()
     )
 

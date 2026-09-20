@@ -1,14 +1,9 @@
 import { useState } from 'react'
 import { ApiError, ocrUpload } from '../api'
+import { STEPS } from '../content'
 import { IconShieldCheck, IconUpload } from '../icons'
 import { navigate } from '../router'
 import { setPendingAnalysis } from '../pending'
-
-const STEPS = [
-  { n: '01', label: 'Scan', body: 'Structural checks read the message for the tells: fake links, credential asks, payment requests.' },
-  { n: '02', label: 'Investigate', body: 'An agent decides what still needs checking and goes to gather it, tool by tool.' },
-  { n: '03', label: 'Explain', body: "Every claim in the verdict traces back to a real, quoted piece of evidence — never a guess." },
-]
 
 export default function InputPage() {
   const [text, setText] = useState('')
@@ -42,10 +37,14 @@ export default function InputPage() {
     <main className="grid min-h-screen lg:grid-cols-[1.1fr_0.9fr]">
       {/* Left: the actual tool */}
       <div className="flex flex-col gap-8 px-6 py-12 sm:px-10 lg:px-16 lg:py-20">
-        <div className="flex items-center gap-2 text-ink-muted">
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="flex w-fit items-center gap-2 text-ink-muted transition hover:text-ink"
+        >
           <IconShieldCheck className="h-5 w-5 text-accent" />
           <span className="font-display text-sm tracking-[0.2em] uppercase">PayGuard</span>
-        </div>
+        </button>
 
         <div className="max-w-md">
           <h1 className="font-display text-3xl leading-[1.15] text-balance text-ink sm:text-4xl">
