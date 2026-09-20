@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ApiError, streamAnalyzeCase, type RiskEvent, type SafetyReport } from '../api'
+import { IconArrowLeft, IconArrowRight } from '../icons'
 import { navigate } from '../router'
 import { takePendingAnalysis } from '../pending'
 
@@ -19,25 +20,43 @@ interface RiskCard extends RiskEvent {
 
 type Card = ToolCard | RiskCard
 
+const RISK_TEXT: Record<string, string> = {
+  LOW_CONCERN: 'text-risk-low',
+  CAUTION: 'text-risk-caution',
+  HIGH_RISK: 'text-risk-high',
+}
+
+function Rail() {
+  return <span aria-hidden className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-accent" />
+}
+
 function ToolCardView({ card }: { card: ToolCard }) {
-  const statusIcon = card.status === 'running' ? '⋯' : card.status === 'ok' ? '✓' : '✗'
-  const statusColor =
-    card.status === 'running' ? 'text-slate-400' : card.status === 'ok' ? 'text-emerald-600' : 'text-amber-600'
+  const isRunning = card.status === 'running'
+  const isRejected = card.status === 'rejected'
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-sm font-medium text-slate-900">{card.tool}</span>
-        <span className={`text-sm ${statusColor}`}>
-          {statusIcon} {card.elapsed_ms !== undefined ? `${card.elapsed_ms}ms` : 'running...'}
+    <div className="animate-card-in relative rounded-md border border-line bg-surface p-4 transition hover:border-line-strong">
+      <Rail />
+      <div className="flex items-center justify-between gap-3">
+        <span className="font-mono text-sm text-ink">{card.tool}</span>
+        <span
+          className={`tabular font-mono text-xs ${
+            isRunning ? 'text-ink-faint' : isRejected ? 'text-risk-caution' : 'text-risk-low'
+          }`}
+        >
+          {isRunning ? 'running…' : `${card.elapsed_ms}ms`}
         </span>
       </div>
-      <p className="mt-1 text-xs text-slate-500">args: {JSON.stringify(card.args)}</p>
-      {card.summary && <p className="mt-1 text-sm text-slate-700">{card.summary}</p>}
+      <p className="mt-1.5 truncate font-mono text-xs text-ink-faint">
+        {JSON.stringify(card.args)}
+      </p>
+      {card.summary && <p className="mt-2 text-sm text-ink-muted">{card.summary}</p>}
       {card.raw !== undefined && (
-        <details className="mt-2">
-          <summary className="cursor-pointer text-xs text-slate-400">Raw JSON</summary>
-          <pre className="mt-1 overflow-x-auto rounded bg-slate-50 p-2 text-xs text-slate-600">
+        <details className="mt-2 group">
+          <summary className="cursor-pointer text-xs text-ink-faint transition hover:text-ink-muted">
+            Raw JSON
+          </summary>
+          <pre className="mt-2 overflow-x-auto rounded bg-canvas p-2.5 font-mono text-xs text-ink-muted">
             {JSON.stringify(card.raw, null, 2)}
           </pre>
         </details>
@@ -48,14 +67,17 @@ function ToolCardView({ card }: { card: ToolCard }) {
 
 function RiskCardView({ card }: { card: RiskCard }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <div className="flex items-center justify-between">
-        <span className="font-medium text-slate-900">Risk Engine</span>
-        <span className="text-sm text-slate-500">{card.level}</span>
+    <div className="animate-card-in relative rounded-md border border-accent/40 bg-surface p-4">
+      <Rail />
+      <div className="flex items-center justify-between gap-3">
+        <span className="font-display text-sm text-ink">Risk Engine</span>
+        <span className={`font-mono text-xs font-medium ${RISK_TEXT[card.level] ?? 'text-ink-muted'}`}>
+          {card.level}
+        </span>
       </div>
-      <p className="mt-1 text-sm text-slate-700">score: {card.score}</p>
+      <p className="mt-1.5 font-mono text-xs text-ink-muted">score {card.score}</p>
       {card.rules_fired.length > 0 && (
-        <p className="mt-1 text-xs text-slate-500">rules fired: {card.rules_fired.join(', ')}</p>
+        <p className="mt-2 text-xs text-ink-faint">{card.rules_fired.join(' · ')}</p>
       )}
     </div>
   )
@@ -119,21 +141,37 @@ export default function TracePage() {
   }, [])
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-4 px-4 py-12">
-      <button type="button" onClick={() => navigate('/')} className="self-start text-sm font-medium text-slate-500 underline">
-        &larr; Check another message
+    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-6 py-12 sm:px-10">
+      <button
+        type="button"
+        onClick={() => navigate('/')}
+        className="flex items-center gap-1.5 self-start text-sm text-ink-faint transition hover:text-ink-muted"
+      >
+        <IconArrowLeft /> Check another message
       </button>
 
       <header>
-        <h1 className="text-xl font-semibold text-slate-900">Investigating{caseId ? ` ${caseId}` : '...'}</h1>
-        <p className="text-sm text-slate-500">Watch PayGuard decide what evidence it needs and go get it.</p>
+        <h1 className="font-display text-xl text-ink">
+          Investigating
+          {caseId && <span className="ml-2 font-mono text-base text-accent">{caseId}</span>}
+        </h1>
+        <p className="mt-1 text-sm text-ink-muted">
+          Watch PayGuard decide what evidence it needs and go get it.
+        </p>
       </header>
 
-      {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && (
+        <p className="rounded-md border border-risk-high/30 bg-risk-high/10 px-3 py-2 text-sm text-risk-high">
+          {error}
+        </p>
+      )}
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 border-l border-line pl-6">
         {cards.map((card, i) =>
           card.kind === 'tool' ? <ToolCardView key={i} card={card} /> : <RiskCardView key={i} card={card} />,
+        )}
+        {cards.length === 0 && !error && (
+          <p className="animate-card-in font-mono text-xs text-ink-faint">waiting for the first tool call&hellip;</p>
         )}
       </div>
 
@@ -141,9 +179,10 @@ export default function TracePage() {
         <button
           type="button"
           onClick={() => navigate(`/case/${report.case_id}`)}
-          className="rounded-lg bg-slate-900 px-4 py-3 font-medium text-white"
+          className="group flex items-center justify-center gap-2 rounded-md bg-accent px-5 py-3.5 font-display text-sm font-semibold text-accent-ink transition hover:bg-accent-strong active:scale-[0.99]"
         >
-          View verdict &rarr;
+          View verdict
+          <IconArrowRight className="transition group-hover:translate-x-0.5" />
         </button>
       )}
     </main>

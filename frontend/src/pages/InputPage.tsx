@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { ApiError, ocrUpload } from '../api'
+import { IconShieldCheck, IconUpload } from '../icons'
 import { navigate } from '../router'
 import { setPendingAnalysis } from '../pending'
+
+const STEPS = [
+  { n: '01', label: 'Scan', body: 'Structural checks read the message for the tells: fake links, credential asks, payment requests.' },
+  { n: '02', label: 'Investigate', body: 'An agent decides what still needs checking and goes to gather it, tool by tool.' },
+  { n: '03', label: 'Explain', body: "Every claim in the verdict traces back to a real, quoted piece of evidence — never a guess." },
+]
 
 export default function InputPage() {
   const [text, setText] = useState('')
@@ -32,70 +39,108 @@ export default function InputPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-12">
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">PayGuard</h1>
-        <p className="mt-1 text-slate-600">
-          Paste a suspicious message below. PayGuard investigates it and shows you the evidence.
-        </p>
-      </header>
+    <main className="grid min-h-screen lg:grid-cols-[1.1fr_0.9fr]">
+      {/* Left: the actual tool */}
+      <div className="flex flex-col gap-8 px-6 py-12 sm:px-10 lg:px-16 lg:py-20">
+        <div className="flex items-center gap-2 text-ink-muted">
+          <IconShieldCheck className="h-5 w-5 text-accent" />
+          <span className="font-display text-sm tracking-[0.2em] uppercase">PayGuard</span>
+        </div>
 
-      <label className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-slate-700">Message to check</span>
-          <label className="cursor-pointer text-sm font-medium text-slate-500 underline">
-            {ocrLoading ? 'Reading screenshot...' : 'Upload a screenshot instead'}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              disabled={ocrLoading}
+        <div className="max-w-md">
+          <h1 className="font-display text-3xl leading-[1.15] text-balance text-ink sm:text-4xl">
+            Don&rsquo;t trust it. Investigate it.
+          </h1>
+          <p className="mt-3 max-w-[36ch] text-ink-muted">
+            Paste the message. PayGuard gathers evidence and shows you exactly why it made its
+            call.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <label className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium text-ink-muted">Message to check</span>
+              <label className="flex cursor-pointer items-center gap-1.5 text-sm font-medium text-accent transition hover:text-accent-strong">
+                <IconUpload className="h-3.5 w-3.5" />
+                {ocrLoading ? 'Reading screenshot…' : 'Upload a screenshot instead'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={ocrLoading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) void handleUpload(file)
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+            </div>
+            <textarea
+              className="min-h-40 rounded-md border border-line bg-surface p-3.5 text-ink placeholder:text-ink-faint outline-none transition focus:border-accent"
+              placeholder="Paste the SMS, WhatsApp message, or email here..."
+              value={text}
               onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) void handleUpload(file)
-                e.target.value = ''
+                setText(e.target.value)
+                setOcrLowConfidence(false)
               }}
             />
+            {ocrLowConfidence && (
+              <p className="rounded-md border border-risk-caution/30 bg-risk-caution/10 px-3 py-2 text-sm text-risk-caution">
+                PayGuard couldn&rsquo;t read that screenshot clearly &mdash; check the text above
+                is correct before continuing.
+              </p>
+            )}
+            {ocrError && (
+              <p className="rounded-md border border-risk-high/30 bg-risk-high/10 px-3 py-2 text-sm text-risk-high">
+                {ocrError}
+              </p>
+            )}
           </label>
+
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-ink-muted">
+              What were you told this payment is for?{' '}
+              <span className="text-ink-faint">(optional)</span>
+            </span>
+            <input
+              className="rounded-md border border-line bg-surface p-3.5 text-ink placeholder:text-ink-faint outline-none transition focus:border-accent"
+              placeholder="e.g. a refund, a delivery fee, a KYC update"
+              value={paymentContext}
+              onChange={(e) => setPaymentContext(e.target.value)}
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={handleCheck}
+            disabled={!text.trim()}
+            className="group flex items-center justify-center gap-2 rounded-md bg-accent px-5 py-3.5 font-display text-sm font-semibold text-accent-ink transition hover:bg-accent-strong active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-surface-raised disabled:text-ink-faint"
+          >
+            Investigate
+          </button>
         </div>
-        <textarea
-          className="min-h-40 rounded-lg border border-slate-300 p-3 text-slate-900 outline-none focus:border-slate-500"
-          placeholder="Paste the SMS, WhatsApp message, or email here..."
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value)
-            setOcrLowConfidence(false)
-          }}
-        />
-        {ocrLowConfidence && (
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            PayGuard couldn't read that screenshot clearly — please check the text above is
-            correct before continuing.
-          </p>
-        )}
-        {ocrError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{ocrError}</p>}
-      </label>
+      </div>
 
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-medium text-slate-700">
-          What were you told this payment is for? <span className="text-slate-400">(optional)</span>
-        </span>
-        <input
-          className="rounded-lg border border-slate-300 p-3 text-slate-900 outline-none focus:border-slate-500"
-          placeholder="e.g. a refund, a delivery fee, a KYC update"
-          value={paymentContext}
-          onChange={(e) => setPaymentContext(e.target.value)}
+      {/* Right: ambient brand panel */}
+      <div className="relative hidden overflow-hidden border-l border-line bg-surface lg:flex lg:flex-col lg:justify-center lg:px-16 lg:py-20">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-accent/[0.07] blur-3xl"
         />
-      </label>
-
-      <button
-        type="button"
-        onClick={handleCheck}
-        disabled={!text.trim()}
-        className="rounded-lg bg-slate-900 px-4 py-3 font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        Check
-      </button>
+        <ol className="flex flex-col gap-10">
+          {STEPS.map((step) => (
+            <li key={step.n} className="flex gap-5">
+              <span className="font-mono text-sm text-accent">{step.n}</span>
+              <div className="flex flex-col gap-1">
+                <span className="font-display text-base text-ink">{step.label}</span>
+                <p className="max-w-[32ch] text-sm text-ink-muted">{step.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
     </main>
   )
 }

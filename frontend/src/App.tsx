@@ -12,14 +12,22 @@ function App() {
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
-  if (path === '/analyzing' || /^\/case\/[^/]+\/trace\/?$/.test(path)) {
-    return <TracePage />
-  }
-  const caseMatch = path.match(/^\/case\/([^/]+)\/?$/)
-  if (caseMatch) {
-    return <CasePage caseId={caseMatch[1]} />
-  }
-  return <InputPage />
+  const page =
+    path === '/analyzing' || /^\/case\/[^/]+\/trace\/?$/.test(path) ? (
+      <TracePage />
+    ) : (
+      (() => {
+        const caseMatch = path.match(/^\/case\/([^/]+)\/?$/)
+        return caseMatch ? <CasePage caseId={caseMatch[1]} /> : <InputPage />
+      })()
+    )
+
+  return (
+    <>
+      <div className="grain-overlay" />
+      {page}
+    </>
+  )
 }
 
 export default App

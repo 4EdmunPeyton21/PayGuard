@@ -1,22 +1,50 @@
 import { useEffect, useState } from 'react'
 import { ApiError, getCase, type Evidence, type RiskLevel, type SafetyReport } from '../api'
+import { IconArrowLeft, IconOctagonStop, IconShieldCheck, IconTriangleAlert } from '../icons'
 import { navigate } from '../router'
 
-const LEVEL_STYLE: Record<RiskLevel, { icon: string; label: string; classes: string }> = {
-  LOW_CONCERN: { icon: '✓', label: 'LOW CONCERN', classes: 'bg-emerald-50 text-emerald-800 border-emerald-300' },
-  CAUTION: { icon: '⚠', label: 'CAUTION', classes: 'bg-amber-50 text-amber-800 border-amber-300' },
-  HIGH_RISK: { icon: '⛔', label: 'HIGH RISK', classes: 'bg-red-50 text-red-800 border-red-300' },
+const LEVEL_STYLE: Record<
+  RiskLevel,
+  { Icon: typeof IconShieldCheck; label: string; text: string; border: string; glow: string }
+> = {
+  LOW_CONCERN: {
+    Icon: IconShieldCheck,
+    label: 'LOW CONCERN',
+    text: 'text-risk-low',
+    border: 'border-risk-low/30',
+    glow: 'bg-risk-low/[0.08]',
+  },
+  CAUTION: {
+    Icon: IconTriangleAlert,
+    label: 'CAUTION',
+    text: 'text-risk-caution',
+    border: 'border-risk-caution/30',
+    glow: 'bg-risk-caution/[0.08]',
+  },
+  HIGH_RISK: {
+    Icon: IconOctagonStop,
+    label: 'HIGH RISK',
+    text: 'text-risk-high',
+    border: 'border-risk-high/30',
+    glow: 'bg-risk-high/[0.08]',
+  },
 }
 
 function EvidenceChip({ evidence }: { evidence: Evidence }) {
   return (
     <span className="group relative inline-block">
-      <span className="cursor-help rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+      <span className="cursor-help rounded-sm border border-line-strong bg-surface-raised px-1.5 py-0.5 font-mono text-xs text-ink-muted transition group-hover:border-accent group-hover:text-accent">
         {evidence.id}
       </span>
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-64 -translate-x-1/2 rounded-lg border border-slate-200 bg-white p-3 text-xs opacity-0 shadow-lg transition group-hover:opacity-100">
-        <span className="block font-medium text-slate-900">Observed: {evidence.observed}</span>
-        <span className="mt-1 block italic text-slate-500">Interpretation: {evidence.interpretation}</span>
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-64 -translate-x-1/2 rounded-md border border-line-strong bg-surface-raised/95 p-3 text-xs opacity-0 shadow-2xl backdrop-blur-sm transition group-hover:opacity-100">
+        <span className="block text-ink">
+          <span className="text-ink-faint">Observed &mdash; </span>
+          {evidence.observed}
+        </span>
+        <span className="mt-1.5 block italic text-ink-muted">
+          <span className="not-italic text-ink-faint">Interpretation &mdash; </span>
+          {evidence.interpretation}
+        </span>
       </span>
     </span>
   )
@@ -35,10 +63,16 @@ export default function CasePage({ caseId }: { caseId: string }) {
 
   if (error) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-4 px-4 py-12">
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-        <button type="button" onClick={() => navigate('/')} className="text-sm font-medium text-slate-600 underline">
-          Back to input
+      <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-4 px-6 py-12">
+        <p className="rounded-md border border-risk-high/30 bg-risk-high/10 px-3 py-2 text-sm text-risk-high">
+          {error}
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="flex items-center gap-1.5 text-sm text-ink-muted transition hover:text-ink"
+        >
+          <IconArrowLeft /> Back to input
         </button>
       </main>
     )
@@ -46,8 +80,8 @@ export default function CasePage({ caseId }: { caseId: string }) {
 
   if (!report) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-2xl items-center justify-center px-4">
-        <p className="text-slate-500">Loading case...</p>
+      <main className="mx-auto flex min-h-screen max-w-2xl items-center justify-center px-6">
+        <p className="font-mono text-sm text-ink-faint">loading case&hellip;</p>
       </main>
     )
   }
@@ -56,22 +90,31 @@ export default function CasePage({ caseId }: { caseId: string }) {
   const evidenceById = new Map(report.evidence.map((e) => [e.id, e]))
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-12">
-      <button type="button" onClick={() => navigate('/')} className="self-start text-sm font-medium text-slate-500 underline">
-        &larr; Check another message
+    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-8 px-6 py-12 sm:px-10">
+      <button
+        type="button"
+        onClick={() => navigate('/')}
+        className="flex items-center gap-1.5 self-start text-sm text-ink-faint transition hover:text-ink-muted"
+      >
+        <IconArrowLeft /> Check another message
       </button>
 
-      <div className={`flex items-center gap-3 rounded-lg border px-4 py-3 ${level.classes}`}>
-        <span aria-hidden className="text-2xl leading-none">{level.icon}</span>
-        <span className="font-semibold tracking-wide">{level.label}</span>
+      <div className={`relative overflow-hidden rounded-lg border ${level.border} bg-surface p-6`}>
+        <div aria-hidden className={`pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full ${level.glow} blur-2xl`} />
+        <div className="flex items-center gap-3">
+          <level.Icon className={`h-7 w-7 ${level.text}`} />
+          <span className={`font-display text-lg tracking-wide ${level.text}`}>{level.label}</span>
+          <span className="ml-auto font-mono text-xs text-ink-faint">{report.case_id}</span>
+        </div>
+        <h1 className="mt-4 max-w-[48ch] font-display text-2xl leading-snug text-balance text-ink">
+          {report.headline}
+        </h1>
       </div>
 
-      <h1 className="text-xl font-semibold text-slate-900">{report.headline}</h1>
-
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Why</h2>
+        <h2 className="font-mono text-xs tracking-[0.2em] text-ink-faint uppercase">Why</h2>
         {report.why.map((claim, i) => (
-          <p key={i} className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 p-3 text-slate-800">
+          <p key={i} className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface p-4 text-ink">
             <span>{claim.text}</span>
             {claim.evidence_ids
               .map((id) => evidenceById.get(id))
@@ -82,19 +125,30 @@ export default function CasePage({ caseId }: { caseId: string }) {
       </section>
 
       {report.recommended_actions.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">What you should do</h2>
+        <section className="flex flex-col gap-3">
+          <h2 className="font-mono text-xs tracking-[0.2em] text-ink-faint uppercase">What you should do</h2>
           <ul className="flex flex-col gap-2">
             {report.recommended_actions.map((action, i) => (
               <li key={i}>
-                <label className="flex items-start gap-2 text-slate-800">
-                  <input
-                    type="checkbox"
-                    className="mt-1"
-                    checked={Boolean(checked[i])}
-                    onChange={(e) => setChecked((prev) => ({ ...prev, [i]: e.target.checked }))}
-                  />
-                  <span className={checked[i] ? 'line-through text-slate-400' : ''}>{action}</span>
+                <label className="flex cursor-pointer items-start gap-3 rounded-md border border-transparent p-1 transition hover:border-line">
+                  <span
+                    className={`relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border transition ${
+                      checked[i] ? 'border-accent' : 'border-line-strong'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      checked={Boolean(checked[i])}
+                      onChange={(e) => setChecked((prev) => ({ ...prev, [i]: e.target.checked }))}
+                    />
+                    {checked[i] && (
+                      <svg viewBox="0 0 12 12" className="h-3 w-3 fill-none stroke-accent stroke-2">
+                        <path d="M2 6.5 4.5 9 10 3" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </span>
+                  <span className={checked[i] ? 'text-ink-faint line-through' : 'text-ink'}>{action}</span>
                 </label>
               </li>
             ))}
@@ -103,13 +157,15 @@ export default function CasePage({ caseId }: { caseId: string }) {
       )}
 
       {report.unverified.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Things PayGuard could not verify
+        <section className="flex flex-col gap-2 rounded-md border border-dashed border-line-strong bg-surface/60 p-4">
+          <h2 className="font-mono text-xs tracking-[0.2em] text-ink-faint uppercase">
+            Could not verify
           </h2>
-          <ul className="list-inside list-disc text-slate-600">
+          <ul className="flex flex-col gap-1">
             {report.unverified.map((item, i) => (
-              <li key={i}>{item}</li>
+              <li key={i} className="text-sm text-ink-muted">
+                {item}
+              </li>
             ))}
           </ul>
         </section>
