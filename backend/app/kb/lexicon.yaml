@@ -11,6 +11,7 @@ threat_of_consequence:
   patterns:
     - '\b(will be blocked|account blocked|account will be suspended|card blocked)\b'
     - '\b(services? terminated|deactivated|penalty|legal action)\b'
+    - '\b(suspicious\s+activity|unauthorized\s+activity|critical\s+step)\b'
     - '\bblock ho jayega\b'
     - '\bband ho jayega\b'
 
@@ -23,6 +24,9 @@ credential_request:
     - '\bkyc update karein\b'
     - '\bpan card update\b'
     - '\baadhaar update\b'
+    - '\b(login\s+credentials?|credentials|social\s+security(\s+number)?|\bssn\b)\b'
+    - '\b(verify\s+(your\s+)?identity|identity\s+verification|account\s+verification)\b'
+    - '\b(enter\s+(your\s+)?login|confirm\s+it.?s\s+you)\b'
 
 # D25 dev-set finding: policy_v1.yaml and patterns.yaml already define
 # weights/requires_all for these signal names, but they were never wired

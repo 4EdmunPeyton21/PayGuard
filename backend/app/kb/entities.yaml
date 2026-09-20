@@ -220,3 +220,28 @@
     - card_number
   source: "Official website security advisory, verified 2026-09-18"
   version: 1
+
+- id: bank_of_america
+  name: Bank of America
+  aliases:
+    - Bank of America
+    - Bank of America NA
+    - BofA
+    - bank of america
+    - bankofamerica
+  official_domains:
+    - bankofamerica.com
+    - bofa.com
+  official_sms_senders:
+    - BOFA
+    - BANKOFAMERICA
+  sector: bank
+  never_asks_for:
+    - otp
+    - pin
+    - password
+    - ssn
+    - credentials
+    - social security
+  source: "Official website security guidelines, verified 2026-09-20"
+  version: 1

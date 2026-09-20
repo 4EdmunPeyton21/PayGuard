@@ -27,13 +27,28 @@ def _domain_matches(candidate: str, official: str) -> bool:
     return False
 
 
-def entity_domain_check(claimed_entity: str, domains: List[str]) -> EntityDomainCheckResult:
+def entity_domain_check(
+    claimed_entity: str,
+    domains: Optional[List[str]] = None,
+    domain: Optional[str] = None,
+    **kwargs,
+) -> EntityDomainCheckResult:
     """Check claimed entity against domains strictly using the YAML knowledge base.
 
     Contract:
     in: claimed_entity: str, domains: list[str]
     out: EntityDomainCheckResult with match, official_domains, entity_in_kb, kb_ref.
     """
+    if domains is None:
+        domains = []
+    elif isinstance(domains, str):
+        domains = [domains]
+    else:
+        domains = list(domains)
+
+    if domain and domain not in domains:
+        domains.append(domain)
+
     entity = kb.resolve_entity(claimed_entity)
 
     if entity is None:
