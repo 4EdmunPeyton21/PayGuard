@@ -58,6 +58,8 @@ unsolicited_refund:
     # legitimate transaction notice and must not match on its own.
     - '\brefund\s+(of\s+)?(rs\.?|inr|₹)?\s*[\d,]+.{0,50}\b(claim|receive|collect|pending|waiting|stuck|reversed|wrong account|verify (upi )?pin|enter (upi )?pin|confirm bank)\b'
     - '\b(cashback|reward)\b.{0,25}\b(credited by mistake|by mistake)\b'
+    - '\b(credited\s+with|received)\s+(rs\.?|inr|₹)?\s*[\d,]+.{0,60}\b(register|claim|bonus|reward|free|collect|withdraw|activate)\b'
+    - '\b(register\s+for\s+free|register\s+now\s+to\s+claim|click\s+here\s+to\s+claim|claim\s+(your\s+)?(cash|reward|bonus|prize))\b'
 
 job_offer_fee:
   confidence: 0.85

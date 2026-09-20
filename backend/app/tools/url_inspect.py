@@ -10,7 +10,20 @@ from app.schemas.evidence import Signal
 from app.schemas.tools import LookalikeCandidate, UrlInspectResult
 
 SHORTENERS = {
-    "bit.ly", "t.co", "tinyurl.com", "is.gd", "goo.gl", "ow.ly", "buff.ly", "cutt.ly"
+    "bit.ly",
+    "t.co",
+    "tinyurl.com",
+    "is.gd",
+    "goo.gl",
+    "ow.ly",
+    "buff.ly",
+    "cutt.ly",
+    "rb.gy",
+    "shorturl.at",
+    "surl.li",
+    "v.gd",
+    "tiny.cc",
+    "zx6.in",
 }
 
 # Empty suffix_list_urls prevents any network calls. Deterministic offline behavior using snapshot.
@@ -52,8 +65,12 @@ def url_inspect(url: str, claimed_entity: Optional[str] = None) -> UrlInspectRes
 
     # 3. Link Shortener
     is_shortener = False
-    if registered_domain and registered_domain.lower() in SHORTENERS:
-        is_shortener = True
+    if registered_domain:
+        reg_low = registered_domain.lower()
+        if reg_low in SHORTENERS or (
+            ext.domain and len(ext.domain) <= 4 and parsed.path and len(parsed.path.strip("/")) >= 3
+        ):
+            is_shortener = True
 
     # Metrics
     hyphen_count = registered_domain.count("-") if registered_domain else 0

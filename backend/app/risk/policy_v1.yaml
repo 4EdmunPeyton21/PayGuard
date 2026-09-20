@@ -50,6 +50,10 @@ gates:
   - name: impersonation_with_domain_mismatch
     all_of: [impersonation_claim, domain_mismatch]
 
+  - name: unsolicited_credit_with_link
+    all_of: [external_link_present]
+    any_of: [unsolicited_refund, investment_promise]
+
 # FP guards: cap the level to protect legitimate messages
 fp_guards:
   - name: informational_only

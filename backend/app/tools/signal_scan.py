@@ -40,7 +40,11 @@ def signal_scan(text: str) -> SignalScanResult:
         return SignalScanResult(signals=[], language="en", has_link=False)
 
     lexicon = _load_lexicon()
-    has_link = bool(re.search(r"https?://\S+", text))
+    _link_pat = (
+        r"(?:https?://\S+)|(?:www\.\S+)|"
+        r"(?:\b[a-zA-Z0-9-]+\.(?:in|com|org|net|co|io|xyz|info|biz|top|me|cc|live|online|site|app|link|click|vip|club|ly|gd)(?:/\S*)?)"
+    )
+    has_link = bool(re.search(_link_pat, text, re.IGNORECASE))
     language = detect_language(text)
 
     detected_signals: List[SignalItem] = []
@@ -85,8 +89,8 @@ def signal_scan(text: str) -> SignalScanResult:
                 )
             )
 
-    # If no risk signals fired, check for benign / informational transactions
-    if not detected_signals:
+    # If no risk signals fired and no link present, check for benign / informational transactions
+    if not detected_signals and not has_link:
         info_cfg = lexicon.get("informational_transaction", {})
         patterns = info_cfg.get("patterns", [])
         confidence = float(info_cfg.get("confidence", 0.95))

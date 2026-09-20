@@ -227,8 +227,26 @@ def _add_pattern_match_evidence(
 # ---------------------------------------------------------------------------
 
 
+_URL_REGEX = re.compile(
+    r"(?:https?://[^\s<>\"']+)|"
+    r"(?:www\.[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+(?:/[^\s<>\"']*)?)|"
+    r"(?:\b[a-zA-Z0-9-]+\.(?:in|com|org|net|co|io|xyz|info|biz|top|me|cc|live|online|site|app|link|click|vip|club|ly|gd)(?:/[^\s<>\"']*)?)",
+    re.IGNORECASE,
+)
+
+
 def _extract_urls(text: str) -> List[str]:
-    return re.findall(r"https?://[^\s<>\"']+", text)
+    raw_matches = _URL_REGEX.findall(text)
+    cleaned: List[str] = []
+    seen: set = set()
+    for u in raw_matches:
+        u = u.rstrip(".,;!?)\"'")
+        if not u.startswith(("http://", "https://")):
+            u = "https://" + u
+        if u not in seen:
+            seen.add(u)
+            cleaned.append(u)
+    return cleaned
 
 
 # ---------------------------------------------------------------------------
