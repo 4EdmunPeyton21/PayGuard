@@ -220,7 +220,7 @@ def run_arm0(case: NormalisedCase) -> SafetyReport:
                     observed=obs,
                     interpretation=interp,
                     direction=direction,
-                    strength="HIGH",
+                    strength="HIGH" if domain_chk.kb_ref else "MEDIUM",
                     confidence=1.0,
                     kb_ref=domain_chk.kb_ref,
                 )

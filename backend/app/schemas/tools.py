@@ -1,6 +1,6 @@
 from typing import Iterator, List, Literal, Optional, Tuple
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.evidence import Signal
 
@@ -24,7 +24,20 @@ class UrlInspectInput(BaseModel):
 
 class EntityDomainCheckInput(BaseModel):
     claimed_entity: str
-    domains: List[str]
+    domains: List[str] = Field(default_factory=list)
+    domain: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_domains(cls, data):
+        if isinstance(data, dict):
+            doms = data.get("domains")
+            single = data.get("domain")
+            if isinstance(doms, str):
+                data["domains"] = [doms]
+            elif (not doms) and single:
+                data["domains"] = [single] if isinstance(single, str) else list(single)
+        return data
 
 
 class PatternMatchInput(BaseModel):

@@ -140,6 +140,7 @@ def _add_entity_domain_evidence(
         direction = (
             "benign" if s == Signal.DOMAIN_VERIFIED_OFFICIAL else "risk"
         )
+        strength = "HIGH" if result.kb_ref else "MEDIUM"
         ledger.add(
             Evidence(
                 id=f"E{len(ledger) + 1}",
@@ -148,7 +149,7 @@ def _add_entity_domain_evidence(
                 observed=f"Entity domain check for {entity}: {s.value}",
                 interpretation=f"Domain alignment: {s.value}",
                 direction=direction,
-                strength="HIGH",
+                strength=strength,
                 confidence=1.0,
                 kb_ref=result.kb_ref,
             )

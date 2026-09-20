@@ -285,7 +285,7 @@ def investigate_fallback(
 
         # Process each tool call
         for tc in assistant_msg.tool_calls:
-            tool_name = tc.function.name
+            tool_name = re.sub(r"<\|.*?\|>.*", "", tc.function.name).strip()
             try:
                 args = json.loads(tc.function.arguments)
             except json.JSONDecodeError:

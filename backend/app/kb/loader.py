@@ -81,6 +81,36 @@ class KnowledgeBase:
             entity_id = self._alias_index[cleaned]
             return self.entities.get(entity_id)
 
+        # Strip common entity suffixes (e.g. "SBI Bank" -> "SBI")
+        suffixes = [
+            " bank ltd",
+            " bank limited",
+            " pvt ltd",
+            " ltd",
+            " limited",
+            " bank",
+            " support",
+            " care",
+            " customer care",
+        ]
+        for suffix in suffixes:
+            if cleaned.endswith(suffix):
+                stem = cleaned[: -len(suffix)].strip()
+                if stem in self._alias_index:
+                    entity_id = self._alias_index[stem]
+                    return self.entities.get(entity_id)
+
+        # Check if any known alias (length >= 3) appears as a whole word in query
+        import re
+
+        for alias, eid in sorted(
+            self._alias_index.items(), key=lambda x: len(x[0]), reverse=True
+        ):
+            if len(alias) >= 3 and re.search(
+                r"\b" + re.escape(alias) + r"\b", cleaned
+            ):
+                return self.entities.get(eid)
+
         return None
 
 
